@@ -5,3 +5,4 @@ authors = ["Andrey Manzharov <andreyrmg@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+quick-xml = "0.17"
