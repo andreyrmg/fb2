@@ -12,48 +12,61 @@ fn print_p(s: &str) {
         v * v * v
     }
 
-    fn f(ws: usize, j: usize) -> usize {
-        let w = WIDTH.saturating_sub(ws);
-        if j > 1 {
-            p(w / (j - 1)) * (j - 1)
+    fn f(spaces: usize, words: usize) -> usize {
+        if words > 1 {
+            p(spaces / (words - 1)) * (words - 1)
         } else {
-            p(w)
+            p(spaces)
         }
     }
 
-    let mut d = vec![p(WIDTH * 2); n + 1];
-    let mut q = vec![(0, 0); n + 1];
-    d[0] = 0;
+    let mut d = Vec::with_capacity(n + 1);
+    struct Line {
+        words: usize,
+        spaces: usize,
+    }
+    let mut recovery = Vec::with_capacity(n + 1);
+    d.push(0);
+    recovery.push(Line {
+        words: 0,
+        spaces: 0,
+    });
     for i in 1..=n {
-        let mut ws = 0;
-        for j in 1..=i {
-            ws += w[i - j];
-            if ws - 1 > WIDTH {
+        let mut spaces = (WIDTH + 1).saturating_sub(w[i - 1]);
+        d.push(d[i - 1] + if i < n { f(spaces, 1) } else { 0 });
+        recovery.push(Line { words: 1, spaces });
+        for j in 2..=i {
+            let (left, overflow) = spaces.overflowing_sub(w[i - j]);
+            if overflow {
                 break;
             }
-            let c = if i < n { d[i - j] + f(ws, j) } else { d[i - j] };
-            if c < d[i] {
-                d[i] = c;
-                q[i] = (j, ws);
+            spaces = left;
+            let nd = d[i - j] + if i < n { f(spaces, j) } else { 0 };
+            if nd < d[i] {
+                d[i] = nd;
+                recovery[i] = Line {
+                    words: j,
+                    spaces: spaces + j,
+                };
             }
         }
     }
     let mut number_per_line = Vec::new();
-    let mut i = n - q[n].0;
+    let mut i = n - recovery[n].words;
     while i > 0 {
-        let (j, ws) = q[i];
-        number_per_line.push((j, WIDTH - (ws - j)));
-        i = i.saturating_sub(j);
+        number_per_line.push(&recovery[i]);
+        i = i.saturating_sub(recovery[i].words);
     }
 
     let mut words = words.into_iter();
-    for (k, mut ws) in number_per_line.into_iter().rev() {
+    for line in number_per_line.into_iter().rev() {
         print!("{}", words.next().unwrap());
-        for i in 1..k {
-            let a = ws / (k - i);
+        let mut spaces = line.spaces;
+        for i in 1..line.words {
+            let a = spaces / (line.words - i);
             print!("{: <1$}", "", a);
             print!("{}", words.next().unwrap());
-            ws -= a;
+            spaces -= a;
         }
         println!();
     }
