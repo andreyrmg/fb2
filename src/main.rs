@@ -46,7 +46,7 @@ fn print_p(s: &str) {
                 d[i] = nd;
                 recovery[i] = Line {
                     words: j,
-                    spaces: spaces + j,
+                    spaces: spaces + j - 1,
                 };
             }
         }
